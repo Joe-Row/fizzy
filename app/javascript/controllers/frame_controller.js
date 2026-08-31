@@ -12,6 +12,7 @@ export default class extends Controller {
     const newElement = event.detail.newElement
     if (newElement && newElement.tagName === "TURBO-FRAME" && newElement.matches('[data-controller~="frame"]')) {
       event.preventDefault()
+      if (window.__nimueDropping && this.element.querySelector("article.card")) return
       this.element.reload()
     }
   }

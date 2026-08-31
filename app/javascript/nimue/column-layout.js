@@ -102,6 +102,10 @@ document.addEventListener("turbo:render", () => {
   applySavedColumnLayout(document)
 })
 
+document.addEventListener("turbo:after-stream-render", () => {
+  applySavedColumnLayout(document)
+})
+
 document.addEventListener("turbo:before-visit", () => {
   persistOpenColumns(document)
 })

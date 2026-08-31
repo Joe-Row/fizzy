@@ -1,13 +1,14 @@
 class Card < ApplicationRecord
   include Accessible, Assignable, Attachments, Broadcastable, Closeable, Colored, Commentable,
     Entropic, Eventable, Exportable, Golden, Mentions, Multistep, Pinnable, Postponable, Promptable,
-    Readable, Searchable, Stallable, Statuses, Storage::Tracked, Taggable, Triageable, Watchable
+    Ranked, Readable, Searchable, Stallable, Statuses, Storage::Tracked, Taggable, Triageable, Watchable
 
   belongs_to :account, default: -> { board.account }
   belongs_to :board
   belongs_to :creator, class_name: "User", default: -> { Current.user }
   belongs_to :parent_card, class_name: "Card", optional: true, inverse_of: :child_cards
-  has_many :child_cards, class_name: "Card", foreign_key: :parent_card_id, inverse_of: :parent_card, dependent: :destroy
+  has_many :child_cards, -> { order(:position, :id) }, class_name: "Card", foreign_key: :parent_card_id, inverse_of: :parent_card, dependent: :destroy
+  has_one :origin_step, class_name: "Step", foreign_key: :child_card_id, inverse_of: :child_card, dependent: :delete
 
   has_many :reactions, -> { order(:created_at) }, as: :reactable, dependent: :delete_all
   has_one_attached :image, dependent: :purge_later
@@ -17,6 +18,7 @@ class Card < ApplicationRecord
   before_save :set_default_title, if: :published?
   before_create :assign_number
   before_destroy :destroy_child_cards_explicitly, prepend: true
+  after_create :ensure_origin_step
 
   after_save   -> { board.touch }, if: :published?
   after_touch  -> { board.touch }, if: :published?
@@ -26,7 +28,7 @@ class Card < ApplicationRecord
   scope :chronologically,         -> { order created_at:     :asc,  id: :asc  }
   scope :latest,                  -> { order last_active_at: :desc, id: :desc }
   scope :with_users,              -> { preload(creator: [ :avatar_attachment, :account ], assignees: [ :avatar_attachment, :account ]) }
-  scope :preloaded,               -> { with_users.preload(:column, :tags, :steps, :closure, :goldness, :activity_spike, :image_attachment, reactions: :reacter, board: [ :entropy, :columns ], not_now: [ :user ]).with_rich_text_description_and_embeds }
+    scope :preloaded,               -> { with_users.preload(:column, :tags, :steps, :origin_step, :closure, :goldness, :activity_spike, :image_attachment, reactions: :reacter, board: [ :entropy, :columns ], not_now: [ :user ]).with_rich_text_description_and_embeds }
 
   scope :indexed_by, ->(index) do
     case index
@@ -70,14 +72,14 @@ class Card < ApplicationRecord
     title.present? || description.present?
   end
 
-  # Board number stays on `number` / URLs / data-id. Tasks display as parent.N
+  # Board number stays on `number` / URLs / data-id. Nested steps display as parent.N
   def display_number
     return number.to_s if parent_card_id.blank?
 
     parent = parent_card
     return number.to_s unless parent
 
-    sibling_ids = parent.child_cards.order(:number).pluck(:id)
+    sibling_ids = parent.child_cards.order(:position, :id).pluck(:id)
     idx = sibling_ids.index(id)
     return number.to_s unless idx
 
@@ -88,6 +90,17 @@ class Card < ApplicationRecord
     def destroy_child_cards_explicitly
       self.class.where(parent_card_id: id).find_each(&:destroy!)
     end
+
+    def ensure_origin_step
+      if parent_card_id.present? && title != "sp" && origin_step.blank?
+        parent_card.steps.create!(
+          content: title.presence || "Untitled",
+          child_card: self,
+          completed: closed?
+        )
+      end
+    end
+
     def set_default_title
       self.title = "Untitled" if title.blank?
     end

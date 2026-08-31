@@ -22,6 +22,11 @@
     <%= filter_hotkey_link "Home", root_path, 1, "home" %>
     <%= filter_hotkey_link "Assigned to me", cards_path(assignee_ids: [Current.user.id]), 2, "clipboard" %>
     <%= filter_hotkey_link "Added by me", cards_path(creator_ids: [Current.user.id]), 3, "person-add" %>
+    <%= link_to "#", class: "popup__item btn borderless", id: "filter-hotkey-5", role: "listitem", data: { filter_target: "item", navigable_list_target: "item" } do %>
+      <%= icon_tag "board" %>
+      <%= tag.span "Last board" %>
+      <%= tag.kbd 5 %>
+    <% end %>
   </div>
 
   <%= yield %>

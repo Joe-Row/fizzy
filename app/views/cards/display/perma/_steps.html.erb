@@ -1,4 +1,4 @@
-<ol class="steps txt-small margin-block-start-auto">
+<ol class="steps txt-small margin-block-start-auto" data-controller="step-order" data-card-path="<%= card_path(card) %>" data-action="dragstart->step-order#dragStart dragover->step-order#dragOver drop->step-order#drop dragend->step-order#dragEnd">
   <%= render partial: "cards/steps/step", collection: card.steps, as: :step %>
 
   <% unless card.closed? %>

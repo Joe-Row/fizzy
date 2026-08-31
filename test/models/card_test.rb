@@ -255,4 +255,79 @@ class CardTest < ActiveSupport::TestCase
     assert_equal user, reaction.reacter
     assert_equal card, reaction.reactable
   end
+
+  test "creating a nested card adds a step on the parent" do
+    parent = cards(:logo)
+
+    child = Card.create!(
+      title: "Write the brief",
+      board: parent.board,
+      creator: users(:david),
+      parent_card: parent,
+      column: parent.column,
+      status: :published
+    )
+
+    step = child.origin_step
+    assert_not_nil step
+    assert_equal parent, step.card
+    assert_equal "Write the brief", step.content
+    assert_not step.completed?
+  end
+
+  test "completing a linked step closes the nested card" do
+    parent = cards(:logo)
+    child = Card.create!(
+      title: "Write the brief",
+      board: parent.board,
+      creator: users(:david),
+      parent_card: parent,
+      column: parent.column,
+      status: :published
+    )
+
+    child.origin_step.update!(completed: true)
+
+    assert child.reload.closed?
+    assert child.origin_step.completed?
+  end
+
+  test "closing a nested card completes its step" do
+    parent = cards(:logo)
+    child = Card.create!(
+      title: "Write the brief",
+      board: parent.board,
+      creator: users(:david),
+      parent_card: parent,
+      column: parent.column,
+      status: :published
+    )
+
+    child.close
+
+    assert child.origin_step.reload.completed?
+  end
+
+  test "move_before reorders top-level cards in a column" do
+    board = boards(:writebook)
+    column = columns(:writebook_triage)
+    first = Card.create!(title: "First", board: board, creator: users(:david), column: column, status: :published)
+    second = Card.create!(title: "Second", board: board, creator: users(:david), column: column, status: :published)
+    third = Card.create!(title: "Third", board: board, creator: users(:david), column: column, status: :published)
+
+    third.move_before(first)
+
+    assert_equal [ third, first, second ], board.cards.where(column: column, parent_card_id: nil).ranked.where(id: [ first.id, second.id, third.id ]).to_a
+  end
+
+  test "move_before reorders nested cards and their steps" do
+    parent = cards(:logo)
+    a = Card.create!(title: "Alpha step", board: parent.board, creator: users(:david), parent_card: parent, column: parent.column, status: :published)
+    b = Card.create!(title: "Beta step", board: parent.board, creator: users(:david), parent_card: parent, column: parent.column, status: :published)
+
+    b.move_before(a)
+
+    assert_equal [ b, a ], parent.child_cards.ranked.to_a
+    assert_equal [ b.origin_step, a.origin_step ], parent.steps.ranked.select(&:child_card_id)
+  end
 end

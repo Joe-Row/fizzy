@@ -15,7 +15,9 @@
   <% end %>
 <% end %>
 <% card_data[:display_number] = card.respond_to?(:display_number) ? card.display_number : card.number %>
-
+<% if card.has_attribute?(:position) %>
+  <% card_data[:position] = (child && card.origin_step) ? card.origin_step.position : card.position %>
+<% end %>
 <% if card.open? %>
   <% card_data[:card_not_now_url] = card_not_now_path(card) %>
   <% card_data[:card_closure_url] = card_closure_path(card) %>

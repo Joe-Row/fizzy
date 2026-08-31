@@ -25,7 +25,7 @@ class Cards::ClosuresController < ApplicationController
   private
     def refresh_stream_after_reopen
       if @card.awaiting_triage?
-        set_page_and_extract_portion_from @board.cards.awaiting_triage.latest.with_golden_first.preloaded
+        set_page_and_extract_portion_from @board.cards.awaiting_triage.ranked.preloaded
       end
     end
 end

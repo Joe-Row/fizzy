@@ -90,6 +90,7 @@ Rails.application.routes.draw do
       resource :image
       resource :not_now
       resource :pin
+      resource :position, only: :create
       resource :publish
       resource :reading
       resource :triage
@@ -100,7 +101,9 @@ Rails.application.routes.draw do
 
       resources :assignments
       resource :self_assignment, only: :create
-      resources :steps
+      resources :steps do
+        resource :position, only: :create, module: :steps
+      end
       resources :taggings
 
       resources :comments do

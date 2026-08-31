@@ -84,24 +84,37 @@ section.cards.cards--grid article.card[data-parent-card-id] {
   border: 0;
   background: transparent;
   color: inherit;
-  font-size: 0.7em;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   opacity: 0.75;
   margin-inline-start: auto;
-  padding-inline: 0.35em;
+  padding: 0.15em 0.25em;
   cursor: pointer;
   user-select: none;
   position: relative;
   z-index: 2;
 }
 
+.task-cards-fold .icon--caret-down {
+  --icon-size: 0.7em;
+  transition: rotate 150ms ease-out;
+}
+
+.task-cards-fold.is-collapsed .icon--caret-down {
+  rotate: -90deg;
+}
+
 .task-cards-fold:hover {
   opacity: 1;
 }
 
-article.card.task-card-parent-collapsed {
-  opacity: 0.92;
+.task-cards-fold:hover .icon--caret-down {
+  opacity: 1;
+}
+
+article.card[draggable="true"] {
+  cursor: grab;
 }
 
 /* Only appears while `i` is active — no standing + Task chrome. */

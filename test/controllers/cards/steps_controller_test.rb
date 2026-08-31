@@ -53,6 +53,24 @@ class Cards::StepsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "completing a step with a nested card closes that card" do
+    parent = cards(:logo)
+    child = Card.create!(
+      title: "Write the brief",
+      board: parent.board,
+      creator: users(:kevin),
+      parent_card: parent,
+      column: parent.column,
+      status: :published
+    )
+    step = child.origin_step
+
+    put card_step_path(parent, step), params: { step: { completed: "1" } }, as: :turbo_stream
+
+    assert child.reload.closed?
+    assert step.reload.completed?
+  end
+
   test "index as JSON" do
     card = cards(:logo)
     card.steps.create!(content: "Step one")

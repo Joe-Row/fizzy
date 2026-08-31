@@ -1,4 +1,4 @@
-// Nested Fizzy task cards under parent stories.
+// Nested Fizzy step cards under parent stories.
 // Flatten before Turbo morph so live updates stay intact. No MutationObserver.
 const PLACEHOLDER_TITLE = "sp"
 const FOLD_STORAGE_KEY = "fizzy-task-folds"
@@ -107,7 +107,7 @@ function clearFoldChrome(card) {
   card.classList.remove("task-card-parent", "task-card-parent-collapsed")
 }
 
-function ensureFoldChrome(parent, count, collapsed) {
+function ensureFoldChrome(parent, collapsed) {
   parent.classList.add("task-card-parent")
   parent.classList.toggle("task-card-parent-collapsed", collapsed)
   let el = parent.querySelector(".task-cards-fold")
@@ -115,7 +115,10 @@ function ensureFoldChrome(parent, count, collapsed) {
     el = document.createElement("button")
     el.type = "button"
     el.className = "task-cards-fold"
-    el.setAttribute("aria-label", "Toggle tasks")
+    const icon = document.createElement("span")
+    icon.className = "icon icon--caret-down"
+    icon.setAttribute("aria-hidden", "true")
+    el.append(icon)
     el.addEventListener("click", (event) => {
       event.preventDefault()
       event.stopPropagation()
@@ -125,8 +128,9 @@ function ensureFoldChrome(parent, count, collapsed) {
     if (header) header.append(el)
     else parent.prepend(el)
   }
-  el.textContent = collapsed ? `▸ ${count}` : `▾ ${count}`
-  el.title = collapsed ? "Expand tasks (e)" : "Collapse tasks (e)"
+  el.classList.toggle("is-collapsed", collapsed)
+  el.title = collapsed ? "Expand steps (e)" : "Collapse steps (e)"
+  el.setAttribute("aria-label", collapsed ? "Expand steps" : "Collapse steps")
   el.setAttribute("aria-expanded", collapsed ? "false" : "true")
 }
 
@@ -170,11 +174,11 @@ function startAddTask(parent) {
     return
   }
 
-  // Ephemeral: only while adding. Enter saves, Esc cancels. No standing + Task chrome.
+  // Ephemeral: only while adding. Enter saves, Esc cancels.
   const form = document.createElement("form")
   form.className = "task-cards-form"
   form.dataset.parentCardId = parent.dataset.cardId
-  form.innerHTML = `<input type="text" name="title" placeholder="Task title — Enter to save, Esc to cancel" required autocomplete="off" aria-label="New task title">`
+  form.innerHTML = `<input type="text" name="title" placeholder="Step title — Enter to save, Esc to cancel" required autocomplete="off" aria-label="New step title">`
   lastChildAnchor(parent).after(form)
   const input = form.querySelector("input")
   input.focus()
@@ -200,7 +204,7 @@ function startAddTask(parent) {
     } catch (err) {
       input.disabled = false
       input.focus()
-      alert(err.message || "Could not create task")
+      alert(err.message || "Could not create step")
     }
   })
 }
@@ -247,9 +251,9 @@ async function deleteCard(card) {
   const kids = childrenOf(card)
   const isChild = !!card.dataset.parentCardId
   const msg = isChild
-    ? "Delete this task?"
+    ? "Delete this step?"
     : kids.length > 0
-      ? `Delete this card and ${kids.length} task${kids.length === 1 ? "" : "s"}?`
+      ? `Delete this card and ${kids.length} step${kids.length === 1 ? "" : "s"}?`
       : "Delete this card?"
 
   if (!confirm(msg)) return
@@ -362,7 +366,7 @@ function applyFoldsInList(list) {
     }
 
     const collapsed = collapsedIds.has(String(parent.dataset.cardId))
-    ensureFoldChrome(parent, kids.length, collapsed)
+    ensureFoldChrome(parent, collapsed)
     kids.forEach((kid) => {
       kid.hidden = collapsed
     })
@@ -384,29 +388,11 @@ function applyFoldsInList(list) {
   })
 }
 
-function flattenList(list) {
-  list.querySelectorAll(".task-cards-form, .task-cards-fold, .task-cards-index").forEach((el) => el.remove())
-
-  const cards = [...list.querySelectorAll("article.card")]
-  cards.forEach((card) => {
-    card.classList.remove("task-card-child", "task-card-parent", "task-card-parent-collapsed", "task-card-placeholder-sp")
-    card.hidden = false
-    clearIndexLabel(card)
-    clearFoldChrome(card)
-    restoreBadgeNumber(card)
-    const board = card.querySelector(".card__board")
-    const title = card.querySelector(".card__title")
-    if (board) {
-      board.style.removeProperty("background-color")
-      board.style.removeProperty("color")
-    }
-    if (title) title.style.removeProperty("color")
-    list.appendChild(card)
-  })
-}
-
-function flattenAll() {
-  lists().forEach(flattenList)
+function positionOf(card) {
+  const n = Number(card.dataset.position)
+  if (Number.isFinite(n)) return n
+  const num = Number(boardNumber(card))
+  return Number.isFinite(num) ? num : 0
 }
 
 function nestList(list) {
@@ -450,34 +436,41 @@ function nestList(list) {
 
   const collapsedIds = loadCollapsedIds()
 
-  byId.forEach((card) => {
-    if (card.dataset.parentCardId) return
-    if (isPlaceholder(card)) return
-    if (!list.contains(card)) return
+  const parents = [...byId.values()]
+    .filter((card) => !card.dataset.parentCardId && !isPlaceholder(card) && list.contains(card))
+    .sort((a, b) => positionOf(a) - positionOf(b))
 
-    const kids = (childrenByParent.get(card.dataset.cardId) || []).filter((k) => !isPlaceholder(k))
-    let anchor = card
+  let cursor = null
+  parents.forEach((card) => {
+    if (cursor) cursor.after(card)
+    else {
+      const first = list.querySelector("article.card")
+      if (first && first !== card) first.before(card)
+    }
+    cursor = card
+
+    const kids = (childrenByParent.get(card.dataset.cardId) || [])
+      .filter((k) => !isPlaceholder(k) && k.closest(".cards__list") === list)
+      .sort((a, b) => positionOf(a) - positionOf(b))
+
     kids.forEach((kid) => {
-      if (kid.closest(".cards__list") !== list) return
       clearIndexLabel(kid)
-      anchor.insertAdjacentElement("afterend", kid)
-      anchor = kid
+      cursor.after(kid)
+      cursor = kid
     })
 
-    const nestedKids = kids.filter((k) => k.closest(".cards__list") === list)
+    const collapsed = kids.length > 0 && collapsedIds.has(String(card.dataset.cardId))
 
-    const collapsed = nestedKids.length > 0 && collapsedIds.has(String(card.dataset.cardId))
-
-    if (nestedKids.length > 0) {
-      ensureFoldChrome(card, nestedKids.length, collapsed)
-      nestedKids.forEach((kid) => { kid.hidden = collapsed })
+    if (kids.length > 0) {
+      ensureFoldChrome(card, collapsed)
+      kids.forEach((kid) => { kid.hidden = collapsed })
     } else {
       clearFoldChrome(card)
     }
   })
 }
 
-/** Rewrite task badges to parent.N (keeps data-id / URLs as the real board number). */
+/** Rewrite step badges to parent.N (keeps data-id / URLs as the real board number). */
 function labelAllTaskBadges(root = document) {
   const byParent = new Map()
   root.querySelectorAll("article.card[data-parent-card-id]").forEach((kid) => {
@@ -502,15 +495,14 @@ function labelAllTaskBadges(root = document) {
       if (parentList && kid.closest(".cards__list") === parentList) same.push(kid)
       else other.push(kid)
     })
-    same.sort((a, b) => Number(boardNumber(a)) - Number(boardNumber(b)))
-    other.sort((a, b) => Number(boardNumber(a)) - Number(boardNumber(b)))
-    applySubNumbers(parentNum, parentList ? [...same, ...other] : [...kids].sort((a, b) => Number(boardNumber(a)) - Number(boardNumber(b))))
+    same.sort((a, b) => positionOf(a) - positionOf(b))
+    other.sort((a, b) => positionOf(a) - positionOf(b))
+    applySubNumbers(parentNum, parentList ? [...same, ...other] : [...kids].sort((a, b) => positionOf(a) - positionOf(b)))
   })
 }
 
 let nestTimer = null
 let nesting = false
-let flattening = false
 
 function paintPerma() {
   const perma = document.querySelector(".card-perma.task-card-child, .card-perma[data-parent-card-id]")
@@ -543,11 +535,10 @@ function paintPerma() {
 
 function nestAll(root = document) {
   const live = root === document
-  if (live && flattening) {
+  if (live && nesting) {
     nestSoon()
     return
   }
-  if (live && nesting) return
   if (live && document.activeElement && document.activeElement.closest(".task-cards-form")) return
   if (live) nesting = true
   try {
@@ -566,11 +557,7 @@ function nestAll(root = document) {
 
 function nestSoon() {
   clearTimeout(nestTimer)
-  if (flattening) {
-    nestTimer = setTimeout(nestSoon, 16)
-    return
-  }
-  nestAll()
+  nestTimer = setTimeout(() => nestAll(), 16)
 }
 
 /** Fizzy DnD only moves the dragged card. Pull nested tasks under the parent
@@ -585,7 +572,7 @@ function accompanyChildren(parent) {
     .filter((k) => !isPlaceholder(k))
   if (kids.length === 0) return
 
-  kids.sort((a, b) => Number(boardNumber(a)) - Number(boardNumber(b)))
+  kids.sort((a, b) => positionOf(a) - positionOf(b))
   let anchor = parent
   kids.forEach((kid) => {
     kid.classList.add("task-card-child")
@@ -596,7 +583,7 @@ function accompanyChildren(parent) {
   })
 
   const collapsed = loadCollapsedIds().has(String(pid))
-  ensureFoldChrome(parent, kids.length, collapsed)
+  ensureFoldChrome(parent, collapsed)
   kids.forEach((kid) => { kid.hidden = collapsed })
   applySubNumbers(boardNumber(parent), kids)
 }
@@ -627,20 +614,6 @@ document.addEventListener("dragend", () => {
   accompanyChildren(parent)
   nestSoon()
 }, true)
-
-function onBeforeStreamMorph() {
-  if (document.activeElement && document.activeElement.closest(".task-cards-form")) return
-  flattening = true
-  try {
-    flattenAll()
-  } finally {
-    requestAnimationFrame(() => { flattening = false })
-  }
-}
-
-// Full-page visits must not flatten the live board. That paints every task
-// as a story, then nestAll "collapses" them a frame later.
-document.addEventListener("turbo:before-stream-render", onBeforeStreamMorph)
 
 document.addEventListener("turbo:before-render", (event) => {
   const body = event.detail?.newBody

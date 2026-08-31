@@ -54,6 +54,28 @@
     padding: 0;
   }
 
+  .step__card {
+    --icon-size: 0.9em;
+
+    align-self: start;
+    color: currentColor;
+    display: grid;
+    opacity: 0.7;
+    place-content: center;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+
+  .steps [data-step-id] {
+    cursor: grab;
+  }
+
+  .steps [data-step-id].drag-and-drop__dragged-item {
+    cursor: grabbing;
+  }
+
   .steps__icon {
     --icon-size: 0.875em;
 

@@ -25,7 +25,7 @@ module CardScoped
 
     def refresh_stream_if_needed
       if @was_in_stream
-        set_page_and_extract_portion_from @board.cards.awaiting_triage.latest.with_golden_first.preloaded
+        set_page_and_extract_portion_from @board.cards.awaiting_triage.ranked.preloaded
       end
     end
 end

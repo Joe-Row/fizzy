@@ -34,6 +34,7 @@ module Card::Closeable
         not_now&.destroy
         create_closure! user: user
         track_event :closed, creator: user
+        complete_origin_step
       end
     end
   end
@@ -43,7 +44,21 @@ module Card::Closeable
       transaction do
         closure&.destroy
         track_event :reopened, creator: user
+        uncomplete_origin_step
       end
     end
   end
+
+  private
+    def complete_origin_step
+      if (step = origin_step) && !step.completed?
+        step.update!(completed: true)
+      end
+    end
+
+    def uncomplete_origin_step
+      if (step = origin_step) && step.completed?
+        step.update!(completed: false)
+      end
+    end
 end

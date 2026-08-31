@@ -1,8 +1,14 @@
-<%= turbo_frame_tag step do %>
+<%= turbo_frame_tag step, draggable: true, data: { step_id: step.id } do %>
   <li class="step">
     <%= form_with model: [step.card, step], data: { controller: "form" } do |form| %>
       <%= form.check_box :completed, { class: "checkbox", data: { action: "change->form#submit" } } %>
     <% end %>
     <%= link_to step.content, edit_card_step_path(step.card, step), class: "step__content" %>
+    <% if step.child_card %>
+      <%= link_to card_path(step.child_card), class: "step__card", title: "Open step card", data: { turbo_frame: "_top" } do %>
+        <%= icon_tag "board" %>
+        <span class="for-screen-reader">Open step card</span>
+      <% end %>
+    <% end %>
   </li>
 <% end %>

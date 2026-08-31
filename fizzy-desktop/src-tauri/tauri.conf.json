@@ -12,7 +12,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Fizzy",
+        "title": "",
         "url": "http://127.0.0.1:3000",
         "width": 1280,
         "height": 800,
@@ -24,6 +24,7 @@
         "dragDropEnabled": false,
         "decorations": false,
         "shadow": true,
+        "visible": false,
         "theme": "Dark",
         "backgroundColor": "#2A333C"
       }

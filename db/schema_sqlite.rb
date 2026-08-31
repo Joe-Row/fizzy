@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.2].define(version: 2026_08_31_150000) do
+ActiveRecord::Schema[8.2].define(version: 2026_08_31_170000) do
   create_table "accesses", id: :uuid, force: :cascade do |t|
     t.datetime "accessed_at"
     t.uuid "account_id", null: false
@@ -220,6 +220,7 @@ ActiveRecord::Schema[8.2].define(version: 2026_08_31_150000) do
     t.uuid "board_id", null: false
     t.uuid "column_id"
     t.uuid "parent_card_id"
+    t.integer "position", default: 0, null: false
     t.datetime "created_at", null: false
     t.uuid "creator_id", null: false
     t.date "due_on"
@@ -233,6 +234,7 @@ ActiveRecord::Schema[8.2].define(version: 2026_08_31_150000) do
     t.index ["account_id", "number"], name: "index_cards_on_account_id_and_number", unique: true
     t.index ["board_id"], name: "index_cards_on_board_id"
     t.index ["column_id"], name: "index_cards_on_column_id"
+    t.index ["column_id", "position"], name: "index_cards_on_column_id_and_position"
     t.index ["parent_card_id"], name: "index_cards_on_parent_card_id"
   end
 
@@ -506,13 +508,17 @@ ActiveRecord::Schema[8.2].define(version: 2026_08_31_150000) do
   create_table "steps", id: :uuid, force: :cascade do |t|
     t.uuid "account_id", null: false
     t.uuid "card_id", null: false
+    t.uuid "child_card_id"
     t.boolean "completed", default: false, null: false
     t.text "content", limit: 65535, null: false
     t.datetime "created_at", null: false
+    t.integer "position", default: 0, null: false
     t.datetime "updated_at", null: false
     t.index ["account_id"], name: "index_steps_on_account_id"
     t.index ["card_id", "completed"], name: "index_steps_on_card_id_and_completed"
+    t.index ["card_id", "position"], name: "index_steps_on_card_id_and_position"
     t.index ["card_id"], name: "index_steps_on_card_id"
+    t.index ["child_card_id"], name: "index_steps_on_child_card_id", unique: true
   end
 
   create_table "storage_entries", id: :uuid, force: :cascade do |t|

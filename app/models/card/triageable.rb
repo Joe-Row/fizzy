@@ -22,6 +22,7 @@ module Card::Triageable
     transaction do
       resume
       update! column: column
+      place_at_front_of_list
       track_event "triaged", particulars: { column: column.name }
       sync_child_cards_column!(column)
     end
@@ -31,6 +32,7 @@ module Card::Triageable
     transaction do
       resume
       update! column: nil
+      place_at_front_of_list
       track_event "sent_back_to_triage" unless skip_event
       sync_child_cards_column!(nil)
     end

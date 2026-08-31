@@ -1,4 +1,4 @@
-// Vim board keys. hjkl navigate. e fold, E toggle expand/collapse all, i add task, x delete.
+// Vim board keys. hjkl navigate. e fold, E toggle expand/collapse all, i add step, x delete.
 // w toggles the highlighted column. h/l move that highlight across columns
 // (open or collapsed) without using Fizzy's arrow keys.
 // Fizzy keeps s/o/c/a/m/t/[ /]/Enter — do not steal those.

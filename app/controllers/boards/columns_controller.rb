@@ -11,7 +11,7 @@ class Boards::ColumnsController < ApplicationController
   end
 
   def show
-    set_page_and_extract_portion_from @column.cards.active.latest.with_golden_first.preloaded
+    set_page_and_extract_portion_from @column.cards.active.ranked.preloaded
     fresh_when etag: @page.records
   end
 

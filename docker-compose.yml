@@ -1,0 +1,26 @@
+# Build this fork. Board data lives in the named volume, not in git.
+#
+#   cp .env.example .env   # then set SECRET_KEY_BASE
+#   docker compose build
+#   docker compose up -d
+
+name: fizzy
+
+services:
+  web:
+    build: .
+    image: fizzy-nimue:local
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    env_file: .env
+    environment:
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE}
+      DISABLE_SSL: "true"
+      BASE_URL: http://127.0.0.1:3000
+      MAILER_FROM_ADDRESS: fizzy@localhost
+    volumes:
+      - fizzy-data:/rails/storage
+
+volumes:
+  fizzy-data:

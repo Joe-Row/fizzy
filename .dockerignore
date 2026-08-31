@@ -46,3 +46,6 @@
 
 # Ignore agent session state — worktrees under .claude/ are whole extra checkouts of this repo.
 /.claude
+
+# Desktop shell is not part of the Rails image.
+/fizzy-desktop

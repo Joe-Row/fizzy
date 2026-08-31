@@ -1,0 +1,167 @@
+/* Board tasks are indented under stories. Card click always opens the perma card.
+   Fold via e / Shift+e (toggle all) or the ▾ control — not the card body. */
+
+/* Keep keyboard selection clear of sticky header + footer (PINNED/SEARCH/…).
+   Fizzy uses scrollIntoView({ block: "nearest" }), which respects scroll-margin. */
+article.card {
+  scroll-margin-top: 3.5rem;
+  scroll-margin-bottom: calc(var(--footer-height, 2.65rem) + 1.25rem);
+}
+
+/* data-parent-card-id is on server HTML. Do not wait for JS class or the
+   Esc morph paints tasks as full stories. */
+article.card.task-card-child,
+.card-columns article.card[data-parent-card-id] {
+  --task-main: color-mix(in srgb, var(--card-color) 32%, white);
+  --task-outline: color-mix(in srgb, var(--card-color) 48%, white);
+  --card-border: 1px solid var(--task-outline);
+  --card-content-color: color-mix(in srgb, var(--task-main) 70%, var(--color-ink));
+  --card-text-color: var(--task-main);
+}
+
+html[data-theme="dark"] article.card.task-card-child,
+html[data-theme="dark"] .card-columns article.card[data-parent-card-id] {
+  box-shadow: 0 0 0 1px var(--task-outline);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme]) article.card.task-card-child,
+  html:not([data-theme]) .card-columns article.card[data-parent-card-id] {
+    box-shadow: 0 0 0 1px var(--task-outline);
+  }
+}
+
+article.card.task-card-child .card__board,
+.card-columns article.card[data-parent-card-id] .card__board {
+  background-color: var(--task-main) !important;
+  color: #1a1a1a !important;
+}
+
+article.card.task-card-child .card__title,
+.card-columns article.card[data-parent-card-id] .card__title {
+  color: var(--task-main) !important;
+}
+
+article.card.task-card-child .card__meta,
+article.card.task-card-child .card__footer,
+.card-columns article.card[data-parent-card-id] .card__meta,
+.card-columns article.card[data-parent-card-id] .card__footer {
+  color: var(--task-main) !important;
+}
+
+article.card.task-card-placeholder-sp {
+  display: none !important;
+}
+
+/* Board multi-column only — keep child width inside the column, not full viewport. */
+.card-columns section.cards article.card.task-card-child,
+.card-columns section.cards article.card[data-parent-card-id] {
+  margin-inline-start: 1.15rem;
+  width: auto;
+  max-inline-size: 100%;
+  box-sizing: border-box;
+  --text-xx-large: 1.15em;
+  --avatar-size: 1.85em;
+  --card-padding-block: 0.4em;
+  --card-padding-inline: 0.85em;
+}
+
+.card-columns section.cards article.card.task-card-child .card__title,
+.card-columns section.cards article.card[data-parent-card-id] .card__title {
+  font-size: 1.15em;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* Column fullscreen (Column: Research): stories only — hide nested tasks. */
+section.cards.cards--grid article.card.task-card-child,
+section.cards.cards--grid article.card[data-parent-card-id] {
+  display: none !important;
+}
+
+.task-cards-fold {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 0.7em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  opacity: 0.75;
+  margin-inline-start: auto;
+  padding-inline: 0.35em;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  z-index: 2;
+}
+
+.task-cards-fold:hover {
+  opacity: 1;
+}
+
+article.card.task-card-parent-collapsed {
+  opacity: 0.92;
+}
+
+/* Only appears while `i` is active — no standing + Task chrome. */
+.task-cards-form {
+  display: block;
+  width: calc(100% - 1.15rem);
+  max-inline-size: 100%;
+  box-sizing: border-box;
+  margin: 0.15rem 0 0.35rem 1.15rem;
+}
+
+.task-cards-form input[type="text"] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--color-ink, #333) 30%, transparent);
+  border-radius: 0.3rem;
+  font: inherit;
+  font-size: 0.9em;
+  background: var(--color-bg, #fff);
+  color: inherit;
+}
+
+.card-perma.task-card-child {
+  /* Accents (No./Edit/Done): lightened story pink, but not so pale the
+     frame wash goes grey. Outer frame needs a stronger hit of that pink
+     than Fizzy's default 33% — big surfaces make a weak mix look mauve. */
+  --card-color: color-mix(in srgb, var(--story-color) 48%, white);
+  --color-container: color-mix(in srgb, var(--card-color) 62%, var(--color-canvas));
+}
+
+/* View transitions are disabled in _head. Unset any inline names so a
+   leftover meta or Turbo still cannot morph the full board. */
+article.card,
+.card-perma,
+.bar,
+.filters {
+  view-transition-name: none !important;
+}
+
+/* Fizzy's default column width is expanded. Missing is-collapsed for a
+   frame paints the full board, then JS adds the class. Invert: thin unless
+   explicitly expanded. */
+@media (min-width: 640px) {
+  .card-columns .cards.cards--doing:not(.is-expanded) {
+    inline-size: var(--column-width-collapsed);
+  }
+
+  .card-columns .cards__transition-container,
+  .card-columns .cards__expander:after {
+    transition: none !important;
+  }
+}
+
+/* h/l: gold outline on the pill, gold on the 1px guitar-string stick.
+   Do not retint the pill fill. Do not outline the full expander. */
+.card-columns .cards.nimue-column-focus.is-collapsed .cards__expander:after {
+  box-shadow: 0 0 0 var(--focus-ring-size, 2px) oklch(var(--lch-yellow-dark));
+}
+
+.card-columns .cards.nimue-column-focus.is-collapsed .cards__expander:before {
+  background-color: oklch(var(--lch-yellow-dark));
+}

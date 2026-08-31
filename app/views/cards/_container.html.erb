@@ -1,12 +1,23 @@
-<section id="<%= dom_id(card, :card_container) %>" class="card-perma" style="--card-color: <%= card.color %>;" data-controller="dialog-manager bridge--form">
-  <% cache card do %>
+<% child = card.has_attribute?(:parent_card_id) && card.parent_card_id.present? %>
+<% card_color = card.color %>
+<% display_number = card.respond_to?(:display_number) ? card.display_number : card.number %>
+<%# Tasks keep the story hue in --story-color only. --card-color is rebased in
+    task-cards.css from that, so do not set --card-color inline on children
+    (inline wins over the stylesheet and leaves the plum frame + mixed pinks). %>
+<% perma_style = child ? "--story-color: #{card_color};" : "--story-color: #{card_color}; --card-color: #{card_color};" %>
+<section id="<%= dom_id(card, :card_container) %>" class="card-perma<%= " task-card-child" if child %>" style="<%= perma_style %>" data-controller="dialog-manager bridge--form"<% if child %> data-parent-card-id="<%= card.parent_card_id %>"<% end %>>
+  <% cache [card, "task-display-v2", child, display_number] do %>
     <div class="card-perma__actions card-perma__actions--left">
       <%= render "cards/container/gild", card: card if card.published? && !card.closed? %>
       <%= render "cards/container/image", card: card %>
     </div>
 
     <div class="card-perma__bg">
-      <%= card_article_tag card, class: "card" do %>
+      <% article_data = child ? { parent_card_id: card.parent_card_id, display_number: display_number } : { display_number: display_number } %>
+      <% if child && card.parent_card %>
+        <% article_data[:parent_card_number] = card.parent_card.number %>
+      <% end %>
+      <%= card_article_tag card, class: "card#{" task-card-child" if child}", data: article_data do %>
         <header class="card__header">
           <%= render "cards/display/perma/board", card: card %>
           <%= render "cards/display/perma/tags", card: card %>

@@ -1,5 +1,5 @@
 class CardsController < ApplicationController
-  wrap_parameters :card, include: %i[ title description image created_at last_active_at ]
+  wrap_parameters :card, include: %i[ title description image created_at last_active_at parent_card_id column_id ]
 
   include FilterScoped
 
@@ -68,6 +68,22 @@ class CardsController < ApplicationController
     end
 
     def card_params
-      params.expect(card: [ :title, :description, :image, :created_at, :last_active_at ])
+      permitted = params.expect(card: [ :title, :description, :image, :created_at, :last_active_at, :parent_card_id, :column_id ])
+      board = @board || @card&.board
+
+      if permitted[:parent_card_id].present? && board
+        parent = board.cards.find_by(id: permitted[:parent_card_id]) ||
+                 board.cards.find_by(number: permitted[:parent_card_id])
+        raise ActiveRecord::RecordNotFound, "Parent card not found on this board" unless parent
+        permitted[:parent_card_id] = parent.id
+      elsif permitted.key?(:parent_card_id) && permitted[:parent_card_id].blank?
+        permitted[:parent_card_id] = nil
+      end
+
+      if permitted[:column_id].present? && board
+        board.columns.find(permitted[:column_id])
+      end
+
+      permitted
     end
 end

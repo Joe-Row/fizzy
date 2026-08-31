@@ -6,7 +6,7 @@ You have <%= pluralize @notifications.count, "new notification" %><%= " in #{ Cu
 <%= "-" * board.name.length %>
 
 <% board_notifications.group_by(&:card).each do |card, notifications| %>
-<%= "##{ card.number } #{ card.title }" %>
+<%= "##{ card.respond_to?(:display_number) ? card.display_number : card.number } #{ card.title }" %>
 <%= render partial: "notification/bundle_mailer/notification", collection: notifications, as: :notification %>
 <% end %>
 <% end %>

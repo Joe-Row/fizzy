@@ -2,10 +2,19 @@
 
 <% card_data = {
   id: card.number,
+  card_id: card.id,
   drag_and_drop_target: "item",
   navigable_list_target: "item",
   css_variable_counter_target: "item"
 } %>
+<% child = card.has_attribute?(:parent_card_id) && card.parent_card_id.present? %>
+<% if child %>
+  <% card_data[:parent_card_id] = card.parent_card_id %>
+  <% if card.parent_card %>
+    <% card_data[:parent_card_number] = card.parent_card.number %>
+  <% end %>
+<% end %>
+<% card_data[:display_number] = card.respond_to?(:display_number) ? card.display_number : card.number %>
 
 <% if card.open? %>
   <% card_data[:card_not_now_url] = card_not_now_path(card) %>
@@ -14,7 +23,7 @@
   <% card_data[:card_assign_to_self_url] = card_self_assignment_path(card) %>
 <% end %>
 
-<%= card_article_tag card, class: "card", draggable: draggable, data: card_data, tabindex: 0 do %>
+<%= card_article_tag card, class: "card#{' task-card-child' if child}", draggable: draggable, data: card_data, tabindex: 0 do %>
   <div class="flex flex-column flex-item-grow max-inline-size">
     <%= link_to card_path(card), draggable: false, class: "card__link", title: card_title_tag(card), data: { action: "dialog#close", turbo_frame: "_top" } do %>
       <span class="for-screen-reader"><%= card.title %></span>

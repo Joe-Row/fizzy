@@ -11,7 +11,7 @@
     <h4 class="card__board">
       <span class="card__id">
         <span class="for-screen-reader">Card number</span>
-        <%= card.number %>
+        <%= card.respond_to?(:display_number) ? card.display_number : card.number %>
       </span>
       <span class="card__board-name">
         <span class="overflow-ellipsis"><%= event.board.name %></span>

@@ -23,6 +23,7 @@ module Card::Triageable
       resume
       update! column: column
       track_event "triaged", particulars: { column: column.name }
+      sync_child_cards_column!(column)
     end
   end
 
@@ -31,6 +32,18 @@ module Card::Triageable
       resume
       update! column: nil
       track_event "sent_back_to_triage" unless skip_event
+      sync_child_cards_column!(nil)
     end
   end
+
+  private
+    def sync_child_cards_column!(column)
+      return unless has_attribute?(:parent_card_id)
+
+      now = Time.current
+      self.class.where(parent_card_id: id).find_each do |child|
+        next if child.column_id == column&.id
+        child.update_columns(column_id: column&.id, updated_at: now)
+      end
+    end
 end

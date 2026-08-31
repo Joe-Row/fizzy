@@ -1,0 +1,7 @@
+#not-now { display: none; }
+
+@media (min-width: 640px) {
+  .card-columns:has(#maybe.is-collapsed) {
+    grid-template-columns: auto var(--column-width-collapsed) auto;
+  }
+}

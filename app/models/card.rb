@@ -6,6 +6,8 @@ class Card < ApplicationRecord
   belongs_to :account, default: -> { board.account }
   belongs_to :board
   belongs_to :creator, class_name: "User", default: -> { Current.user }
+  belongs_to :parent_card, class_name: "Card", optional: true, inverse_of: :child_cards
+  has_many :child_cards, class_name: "Card", foreign_key: :parent_card_id, inverse_of: :parent_card, dependent: :destroy
 
   has_many :reactions, -> { order(:created_at) }, as: :reactable, dependent: :delete_all
   has_one_attached :image, dependent: :purge_later
@@ -14,6 +16,7 @@ class Card < ApplicationRecord
 
   before_save :set_default_title, if: :published?
   before_create :assign_number
+  before_destroy :destroy_child_cards_explicitly, prepend: true
 
   after_save   -> { board.touch }, if: :published?
   after_touch  -> { board.touch }, if: :published?
@@ -67,7 +70,24 @@ class Card < ApplicationRecord
     title.present? || description.present?
   end
 
+  # Board number stays on `number` / URLs / data-id. Tasks display as parent.N
+  def display_number
+    return number.to_s if parent_card_id.blank?
+
+    parent = parent_card
+    return number.to_s unless parent
+
+    sibling_ids = parent.child_cards.order(:number).pluck(:id)
+    idx = sibling_ids.index(id)
+    return number.to_s unless idx
+
+    "#{parent.number}.#{idx + 1}"
+  end
+
   private
+    def destroy_child_cards_explicitly
+      self.class.where(parent_card_id: id).find_each(&:destroy!)
+    end
     def set_default_title
       self.title = "Untitled" if title.blank?
     end

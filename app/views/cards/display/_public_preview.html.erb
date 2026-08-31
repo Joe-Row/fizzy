@@ -4,7 +4,7 @@
       <div class="card__board flex align-start">
           <span class="card__id">
             <span class="for-screen-reader">Card number</span>
-            <%= card.number %>
+            <%= card.respond_to?(:display_number) ? card.display_number : card.number %>
           </span>
         <span class="card__board-name">
             <span class="overflow-ellipsis"><%= card.board.name %></span>
